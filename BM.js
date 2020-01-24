@@ -10,7 +10,13 @@ class BM extends Component {
     super(props);
     this.manager = new BleManager();
     this.device = null;
-    this.state = {info: '', values: {}, message: ''};
+    this.state = {
+      info: '',
+      values: {},
+      message: '',
+      onButtonState: 1,
+      connectButtonState: 0,
+    };
     this.prefixUUID = 'f000aa';
     this.suffixUUID = '-0451-4000-b000-000000000000';
     this.sensors = {
@@ -24,7 +30,6 @@ class BM extends Component {
     this.volChar = '088a1e2a-1991-411e-8a73-f71bdcd7487c';
     this.soundMessage = 'no sound detected';
   }
-
 
 
   serviceUUID(num) {
@@ -66,6 +71,24 @@ class BM extends Component {
     // this.setState({values: {...this.state.values, [key]: value}});
   }
 
+  toggleVibration() {
+    if (this.state.onButtonState) {
+      this.on();
+    } else {
+      this.off();
+    }
+    this.setState({onButtonState: !this.state.onButtonState});
+  }
+
+  toggleConnection() {
+    if (this.state.connectButtonState) {
+      this.disconnect();
+    } else {
+      this.scanAndConnect();
+    }
+    this.setState({connectButtonState: !this.state.connectButtonState});
+  }
+
   async on() {
     const rCHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
     const service = '4fafc201-1fb5-459e-8fcc-c5c9c331914b'; //this.serviceUUID(id);
@@ -97,16 +120,16 @@ class BM extends Component {
   }
 
   async fetchValue() {
+  if (this.device) {
     console.log('fetching val');
     const service = '4fafc201-1fb5-459e-8fcc-c5c9c331914b'; //this.serviceUUID(id);
     const characteristicW = 'beb5483e-36e1-4688-b7f5-ea07361b26a8'; // this.writeUUID(id);
     const characteristicN = 'beb5483e-36e1-4688-b7f5-ea07361b26a8'; // this.notifyUUID(id);
 
-    if (this.device) {
+
       this.device
         .readCharacteristicForService(service, characteristicN)
         .then(res => {
-          console.log('val', base64.decode(res.value));
           this.setState({
             message: base64.decode(res.value),
           });
@@ -121,12 +144,13 @@ class BM extends Component {
       //   },
       // );
     } else {
-      console.log('no device detected');
+      return;
+      // console.log('no device detected');
     }
   }
 
   componentDidMount() {
-    this.soundMessage = setInterval(() => this.fetchValue(), 500);
+    this.soundMessage = setInterval(() => this.fetchValue(), 2000);
   }
 
   async setupNotifications(device) {
@@ -209,14 +233,102 @@ class BM extends Component {
 
   render() {
     return (
-      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-        <Button
-          style={{top: 50}}
-          title="Scan For Devices"
-          onPress={() => this.scanAndConnect()}
-        />
-        <Text style={{fontSize: 50, paddingTop: 50}}>{this.state.info}</Text>
-        <Text style={{fontSize: 50}}>{this.state.message}</Text>
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'stretch'}}>
+        {/* <Text style={{fontSize: 50, paddingTop: 50}}>{this.state.info}</Text> */}
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <Text style={{fontSize: 50, paddingTop: 30, paddingBottom: 30}}>{this.state.message}</Text>
+        </View>
+        <View style={{
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'stretch',
+          }}>
+        <View style={{margin:10, width:110}}>
+          <Button
+            title={this.state.onButtonState ? 'On' : 'Off'}
+            color={this.state.onButtonState ? 'blue' : 'red'}
+            accessibilityLabel="On/Off"
+            onPress={() => {
+              this.toggleVibration();
+            }}
+            />  
+          </View>
+          <View style={{margin:10}}>
+          <Button
+            title="Decrypt Data"
+            color="blue"
+            accessibilityLabel="Tap to Decrypt Data"
+            onPress={() => {
+              Alert.alert('You tapped the Decrypt button!');
+            }}
+            />  
+          </View>
+        </View>
+
+        <View
+          style={{
+            flex: 1,
+            flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'stretch',
+          }}>
+          <View style={{margin: 10}}>
+            <Button
+              title="Decrypt Data"
+              color="blue"
+              accessibilityLabel="Tap to Decrypt Data"
+              onPress={() => {
+                Alert.alert('You tapped the Decrypt button!');
+              }}
+            />
+          </View>
+
+          <View style={{margin:10}}>
+          <Button
+            title="Decrypt Data"
+            color="blue"
+            accessibilityLabel="Tap to Decrypt Data"
+            onPress={() => {
+              Alert.alert('You tapped the Decrypt button!');
+            }}
+            />  
+          </View>
+          </View>
+          <View
+            style={{
+              paddingTop: 10,
+              paddingBottom: 10,
+
+              borderBottomColor: 'black',
+              borderBottomWidth: 1,
+            }}
+          />
+          <View
+          style={{
+            flex: 1,
+            flexDirection: 'row',
+            justifyContent: 'center',
+            alignItems: 'stretch',
+          }}>
+          <View style={{margin:10, width:110}}>
+            <Button
+              title={this.state.connectButtonState ? 'Disconnect' : 'Connect'}
+              color={this.state.connectButtonState ? 'red' : 'blue'}
+              accessibilityLabel="Tap to Decrypt Data"
+              onPress={() => this.toggleConnection()}
+            />
+          </View>
+
+          {/* <View style={{margin:10}}>
+          <Button
+            title="Disconnect"
+            color="blue"
+            accessibilityLabel="Tap to Decrypt Data"
+            onPress={() => this.disconnect()}
+            />  
+          </View> */}
+          </View>
         {/* {Object.keys(this.sensors).map((key) => {
           return (
             <Text key={key}>
@@ -226,25 +338,18 @@ class BM extends Component {
             </Text>
           );
         })} */}
-        <Button style={{top: 50}} title="On" onPress={() => this.on()} />
-        <Text>{'\n\n'}</Text>
-        <Button style={{top: 50}} title="Off" onPress={() => this.off()} />
-        <Text>{'\n\n'}</Text>
-        <Button
-          style={{top: 50}}
-          title="fetch val"
-          onPress={() => this.fetchValue()}
-        />
+     
+      <View>
+      </View>
+
+      <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+        <Text style={{paddingTop: 50}}>{this.state.info}</Text>
         <Text>
           {this.device
             ? '\n\n' + this.device.name + '\n\n'
             : '\n\n no device detected\n\n'}
         </Text>
-        <Button
-          style={{top: 50}}
-          title="Disconnect"
-          onPress={() => this.disconnect()}
-        />
+        </View>
       </View>
     );
   }
